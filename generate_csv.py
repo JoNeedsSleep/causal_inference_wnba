@@ -3,6 +3,21 @@ import csv
 import os
 import glob
 
+def convert_minutes_to_decimal(time_str):
+    """Convert MM:SS format to decimal minutes (e.g., '25:30' -> 25.5)"""
+    if not time_str or time_str == "":
+        return 0.0
+    try:
+        parts = time_str.split(":")
+        if len(parts) == 2:
+            minutes = int(parts[0])
+            seconds = int(parts[1])
+            return round(minutes + (seconds / 60.0), 2)
+        else:
+            return 0.0
+    except (ValueError, IndexError):
+        return 0.0
+
 # Define the output CSV file name
 output_file = "wnba_player_game_data.csv"
 
@@ -10,7 +25,7 @@ output_file = "wnba_player_game_data.csv"
 columns = [
     "id", "scheduled", "player_full_name", "player_id", "player_starter", 
     "player_rebounds", "player_position", "player_steals", "player_blocks",
-    "player_personal_fouls", "player_points",
+    "minutes_on_court",
     "home_name", "home_alias", "away_name", "away_alias",
     "referee_1_full_name", "referee_2_full_name", "referee_3_full_name"
 ]
@@ -58,14 +73,16 @@ for file_path in game_files:
                 player_rebounds = stats.get("rebounds", 0)
                 player_steals = stats.get("steals", 0)
                 player_blocks = stats.get("blocks", 0)
-                player_personal_fouls = stats.get("personal_fouls", 0)
-                player_points = stats.get("points", 0)
+                
+                # Get minutes and convert to decimal
+                minutes_str = stats.get("minutes", "")
+                minutes_on_court = convert_minutes_to_decimal(minutes_str)
                 
                 # Add player data to the list
                 player_data = [
                     game_id, scheduled, player_full_name, player_id, player_starter,
                     player_rebounds, player_position, player_steals, player_blocks,
-                    player_personal_fouls, player_points,
+                    minutes_on_court,
                     home_name, home_alias, away_name, away_alias,
                     referee_1_full_name, referee_2_full_name, referee_3_full_name
                 ]
