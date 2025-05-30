@@ -25,7 +25,7 @@ output_file = "wnba_player_game_data.csv"
 columns = [
     "id", "scheduled", "player_full_name", "player_id", "player_starter", 
     "player_rebounds", "player_position", "player_steals", "player_blocks",
-    "minutes_on_court",
+    "player_personal_fouls", "player_points", "player_minutes",
     "home_name", "home_alias", "away_name", "away_alias",
     "referee_1_full_name", "referee_2_full_name", "referee_3_full_name"
 ]
@@ -73,16 +73,14 @@ for file_path in game_files:
                 player_rebounds = stats.get("rebounds", 0)
                 player_steals = stats.get("steals", 0)
                 player_blocks = stats.get("blocks", 0)
-                
-                # Get minutes and convert to decimal
-                minutes_str = stats.get("minutes", "")
-                minutes_on_court = convert_minutes_to_decimal(minutes_str)
-                
+                player_personal_fouls = stats.get("personal_fouls", 0)
+                player_points = stats.get("points", 0)
+                player_minutes = convert_minutes_to_decimal(stats.get("minutes", ""))
                 # Add player data to the list
                 player_data = [
                     game_id, scheduled, player_full_name, player_id, player_starter,
                     player_rebounds, player_position, player_steals, player_blocks,
-                    minutes_on_court,
+                    player_personal_fouls, player_points, player_minutes,
                     home_name, home_alias, away_name, away_alias,
                     referee_1_full_name, referee_2_full_name, referee_3_full_name
                 ]
