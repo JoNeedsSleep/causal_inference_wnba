@@ -1,0 +1,69 @@
+---
+title: "WNBA Causality Cleaning"
+output: html_notebook
+---
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+
+```{r}
+player_game_data <- read.csv("wnba_player_game_data.csv")
+player_codes <- read.csv("player_codes.csv")
+df_refs <-read.csv("ref_codes.csv")
+```
+
+```{r}
+df_players <- left_join(player_game_data, player_codes, join_by(player_id==Player.ID))
+```
+
+```{r}
+# Step 1: Add unique row ID to track each original observation
+df_players <- df_players %>%
+  mutate(row_id = row_number())
+
+# Step 2: Pivot referee columns to long format
+df_long <- df_players %>%
+  pivot_longer(cols = starts_with("referee_"), 
+               names_to = "ref_slot", 
+               values_to = "ref_name")
+
+# Step 3: Join with referee race info
+df_long <- df_long %>%
+  left_join(df_refs, by = c("ref_name" = "Name"))
+
+# Step 4: Compare referee race to player race
+df_long <- df_long %>%
+  mutate(match = ifelse(Race == Player.Race, 1, 0))
+
+# Step 5: Summarize matching refs by row
+df_matches <- df_long %>%
+  group_by(row_id) %>%
+  summarise(matching_refs = sum(match), .groups = "drop")
+
+# Step 6: Join match count back to original data
+df_result <- df_players %>%
+  left_join(df_matches, by = "row_id") %>%
+  select(-row_id) 
+```
+
+```{r}
+ df_result <- df_result %>%
+  mutate(opponent = if_else(team == home_alias, away_alias, home_alias))
+
+
+df2 <- df_result %>% filter(player_minutes > 5) %>% 
+                     select(player_position, player_points, player_steals, player_blocks, player_rebounds, player_personal_fouls, Player.Race, matching_refs, player_minutes, team, opponent) %>%
+                     rename(position = player_position, point_rate=player_points, steal_rate=player_steals, block_rate=player_blocks,
+                    rebound_rate=player_rebounds, foul_rate=player_personal_fouls, race = Player.Race, time = player_minutes) %>%
+                    mutate(across(c(point_rate, steal_rate, block_rate, rebound_rate, foul_rate), ~ .x / time * 40))
+              
+
+df2["majority_match"] <- as.integer(df2$matching_refs > 1)
+
+
+write.csv(drop_na(df2), "clean_wnba.csv")
+```
